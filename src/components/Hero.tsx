@@ -5,7 +5,7 @@ export default function Hero() {
 
   return (
     <header className="relative isolate overflow-hidden bg-abyss text-white">
-      <picture>
+      <picture className="absolute inset-0 -z-10 block">
         <source srcSet="/hero_oasishouse.avif" type="image/avif" />
         <source srcSet="/hero_oasishouse.webp" type="image/webp" />
         <img
@@ -17,7 +17,7 @@ export default function Hero() {
           fetchPriority="high"
           decoding="async"
           onLoad={() => setLoaded(true)}
-          className={`absolute inset-0 -z-10 h-full w-full object-cover transition-opacity duration-700 ease-out ${
+          className={`h-full w-full object-cover transition-opacity duration-700 ease-out ${
             loaded ? "opacity-100" : "opacity-0"
           }`}
         />
