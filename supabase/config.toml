@@ -1,0 +1,10 @@
+project_id = "oasishouse-caribbean"
+
+[functions.subscribe]
+verify_jwt = false
+
+[functions.verify]
+verify_jwt = false
+
+[functions.admin-participants]
+verify_jwt = false
