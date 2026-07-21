@@ -1,21 +1,38 @@
 export default function Hero() {
   return (
-    <header className="relative overflow-hidden bg-deep text-white">
-      <div className="absolute inset-0 bg-gradient-to-br from-ocean/40 via-deep to-deep" />
-      <div className="relative mx-auto max-w-3xl px-6 py-16 text-center sm:py-24">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-lagoon">
-          Télé-réalité
+    <header className="relative isolate overflow-hidden text-white">
+      <img
+        src="/hero_oasishouse.jpg"
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-abyss/80 via-midnight/70 to-abyss" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-ocean/30 via-transparent to-coral/20" />
+
+      <div className="relative mx-auto max-w-3xl px-6 py-24 text-center sm:py-32">
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-lagoon drop-shadow">
+          Télé-réalité — Guyane
         </p>
-        <h1 className="text-4xl font-extrabold leading-tight sm:text-6xl">
-          Oasis House <span className="text-coral">Caribbean</span>
+        <h1 className="text-4xl font-extrabold leading-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.5)] sm:text-6xl">
+          Oasis House{" "}
+          <span className="bg-gradient-to-r from-coral to-sunset bg-clip-text text-transparent">
+            Caribbean
+          </span>
         </h1>
-        <p className="mx-auto mt-5 max-w-xl text-lg text-slate-200">
-          Le soleil, la mer, l'aventure… et toi&nbsp;? Inscris-toi au casting et
-          tente ta chance pour devenir l'un des candidats de la nouvelle saison.
+        <p className="mt-3 text-lg italic text-slate-200/90">
+          Là où naissent les talents.
+        </p>
+        <p className="mx-auto mt-6 max-w-xl text-lg text-slate-200/90">
+          Créateurs de contenus, entrepreneurs, artistes, jeunes talents&nbsp;:
+          rejoins la villa et révèle ton potentiel devant les caméras.
         </p>
         <a href="#inscription" className="btn-primary mt-8">
           Je m'inscris au casting
         </a>
+        <p className="mt-4 text-sm text-lagoon">
+          Date limite d'inscription&nbsp;: <strong>10 août 2026</strong>
+        </p>
       </div>
     </header>
   );

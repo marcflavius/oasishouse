@@ -34,14 +34,29 @@ async function callFunction<T>(name: string, body: unknown): Promise<T> {
   return data as T;
 }
 
+export type SocialPlatform =
+  | "instagram"
+  | "tiktok"
+  | "youtube"
+  | "twitter"
+  | "facebook"
+  | "twitch"
+  | "snapchat";
+
+export interface SocialLink {
+  platform: SocialPlatform;
+  url: string;
+}
+
 export interface SubscribeInput {
   prenom: string;
   nom: string;
+  blaze: string; // nickname / stage name
   email: string;
   telephone: string;
-  ile: string;
   age: string; // kept as string from the form; coerced server-side
   motivation: string;
+  socials: SocialLink[];
   hp: string; // honeypot — must stay empty
 }
 
@@ -60,10 +75,11 @@ export interface Participant {
   created_at: string;
   prenom: string;
   nom: string;
+  blaze: string | null;
   email: string;
   telephone: string | null;
   age: number | null;
-  ile: string | null;
+  socials: SocialLink[];
   motivation: string | null;
   verified: boolean;
   verified_at: string | null;

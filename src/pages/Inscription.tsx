@@ -1,17 +1,7 @@
 import { useState, type FormEvent } from "react";
 import Hero from "../components/Hero";
+import SocialsPicker from "../components/SocialsPicker";
 import { subscribe, type SubscribeInput } from "../lib/api";
-
-const ILES = [
-  "Guadeloupe",
-  "Martinique",
-  "Guyane",
-  "Saint-Martin",
-  "Saint-Barthélemy",
-  "Haïti",
-  "République dominicaine",
-  "Autre",
-];
 
 type Status =
   | { kind: "idle" }
@@ -22,11 +12,12 @@ type Status =
 const EMPTY: SubscribeInput = {
   prenom: "",
   nom: "",
+  blaze: "",
   email: "",
   telephone: "",
-  ile: "",
   age: "",
   motivation: "",
+  socials: [],
   hp: "",
 };
 
@@ -40,6 +31,13 @@ export default function Inscription() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (form.socials.length === 0) {
+      setStatus({
+        kind: "error",
+        message: "Ajoute au moins un lien réseau social.",
+      });
+      return;
+    }
     setStatus({ kind: "loading" });
     try {
       await subscribe(form);
@@ -57,18 +55,50 @@ export default function Inscription() {
     <>
       <Hero />
 
-      <main className="mx-auto max-w-2xl px-6 py-16" id="inscription">
-        <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+      <section className="mx-auto max-w-3xl px-6 py-16">
+        <h2 className="text-2xl font-bold text-white sm:text-3xl">
+          À propos de l'émission
+        </h2>
+        <div className="mt-4 space-y-4 text-slate-300">
+          <p>
+            <strong>OASIS HOUSE</strong>{" "}
+            <em>(Là où naissent les talents)</em> est une émission de
+            télé-réalité qui réunit dans une villa des créateurs de contenus,
+            entrepreneurs, artistes et jeunes talents afin de valoriser leur
+            potentiel, leur créativité et leur capacité à avoir un impact
+            positif sur la société.
+          </p>
+          <p>
+            À travers des défis, des projets collaboratifs, des actions
+            solidaires et la création de contenus digitaux, les participants
+            développent leurs compétences tout en mettant en lumière les
+            richesses humaines, culturelles et associatives de la{" "}
+            <strong>Guyane</strong>.
+          </p>
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-coral/30 bg-coral/10 px-6 py-4 text-center backdrop-blur">
+          <p className="text-sm font-semibold uppercase tracking-widest text-coral">
+            Date limite d'inscription
+          </p>
+          <p className="mt-1 text-2xl font-extrabold text-white">
+            10 août 2026
+          </p>
+        </div>
+      </section>
+
+      <main className="mx-auto max-w-2xl px-6 pb-24" id="inscription">
+        <h2 className="text-2xl font-bold text-white sm:text-3xl">
           Formulaire d'inscription
         </h2>
-        <p className="mt-2 text-slate-600">
+        <p className="mt-2 text-slate-400">
           Remplis ce formulaire pour candidater. Tu recevras un email de
           confirmation à valider pour finaliser ton inscription.
         </p>
 
         {status.kind === "success" ? (
-          <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-900">
-            <h3 className="text-lg font-semibold">Merci&nbsp;!</h3>
+          <div className="mt-8 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-6 text-emerald-200 backdrop-blur">
+            <h3 className="text-lg font-semibold text-emerald-100">Merci&nbsp;!</h3>
             <p className="mt-1">
               Un email de confirmation vient de t'être envoyé. Clique sur le
               lien pour valider ta candidature.
@@ -118,6 +148,19 @@ export default function Inscription() {
             </div>
 
             <div>
+              <label className="field-label" htmlFor="blaze">
+                Blaze <span className="font-normal text-slate-400">(surnom)</span>
+              </label>
+              <input
+                id="blaze"
+                className="field-input"
+                placeholder="Ton pseudo, surnom ou nom de scène"
+                value={form.blaze}
+                onChange={(e) => update("blaze", e.target.value)}
+              />
+            </div>
+
+            <div>
               <label className="field-label" htmlFor="email">
                 Email
               </label>
@@ -164,28 +207,6 @@ export default function Inscription() {
             </div>
 
             <div>
-              <label className="field-label" htmlFor="ile">
-                Île / Territoire
-              </label>
-              <select
-                id="ile"
-                className="field-input"
-                required
-                value={form.ile}
-                onChange={(e) => update("ile", e.target.value)}
-              >
-                <option value="" disabled>
-                  Choisis…
-                </option>
-                {ILES.map((i) => (
-                  <option key={i} value={i}>
-                    {i}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
               <label className="field-label" htmlFor="motivation">
                 Pourquoi veux-tu participer&nbsp;?
               </label>
@@ -199,8 +220,13 @@ export default function Inscription() {
               />
             </div>
 
+            <SocialsPicker
+              value={form.socials}
+              onChange={(socials) => update("socials", socials)}
+            />
+
             {status.kind === "error" && (
-              <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+              <p className="rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
                 {status.message}
               </p>
             )}

@@ -30,15 +30,15 @@ export default function Verifier() {
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 py-16 text-center">
       {state.kind === "loading" && (
-        <p className="text-slate-600">Vérification en cours…</p>
+        <p className="text-slate-400">Vérification en cours…</p>
       )}
 
       {state.kind === "done" && state.status === "success" && (
         <>
-          <h1 className="text-3xl font-extrabold text-emerald-700">
+          <h1 className="text-3xl font-extrabold text-emerald-300">
             Candidature confirmée&nbsp;!
           </h1>
-          <p className="mt-3 text-slate-700">
+          <p className="mt-3 text-slate-300">
             Ton adresse est vérifiée. Nous te recontacterons prochainement pour
             la suite du casting.
           </p>
@@ -47,10 +47,10 @@ export default function Verifier() {
 
       {state.kind === "done" && state.status === "already" && (
         <>
-          <h1 className="text-3xl font-extrabold text-ocean">
+          <h1 className="text-3xl font-extrabold text-lagoon">
             Déjà confirmée
           </h1>
-          <p className="mt-3 text-slate-700">
+          <p className="mt-3 text-slate-300">
             Cette candidature a déjà été vérifiée. À bientôt&nbsp;!
           </p>
         </>
@@ -58,10 +58,10 @@ export default function Verifier() {
 
       {state.kind === "done" && state.status === "invalid" && (
         <>
-          <h1 className="text-3xl font-extrabold text-red-700">
+          <h1 className="text-3xl font-extrabold text-red-300">
             Lien invalide ou expiré
           </h1>
-          <p className="mt-3 text-slate-700">
+          <p className="mt-3 text-slate-300">
             Ce lien de vérification n'est plus valide. Réinscris-toi pour
             recevoir un nouveau lien.
           </p>
@@ -70,8 +70,8 @@ export default function Verifier() {
 
       {state.kind === "error" && (
         <>
-          <h1 className="text-3xl font-extrabold text-red-700">Erreur</h1>
-          <p className="mt-3 text-slate-700">{state.message}</p>
+          <h1 className="text-3xl font-extrabold text-red-300">Erreur</h1>
+          <p className="mt-3 text-slate-300">{state.message}</p>
         </>
       )}
 

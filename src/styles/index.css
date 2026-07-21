@@ -7,18 +7,29 @@
     font-family: "Poppins", system-ui, sans-serif;
   }
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply bg-abyss text-slate-100 antialiased;
+    background-image:
+      radial-gradient(1200px 600px at 10% -10%, rgba(8, 145, 178, 0.18), transparent 60%),
+      radial-gradient(900px 500px at 100% 10%, rgba(34, 211, 238, 0.10), transparent 60%),
+      radial-gradient(700px 400px at 50% 110%, rgba(251, 113, 133, 0.10), transparent 60%);
+    background-attachment: fixed;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-full bg-coral px-6 py-3 font-semibold text-white shadow-lg transition hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-coral/30 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center rounded-full bg-gradient-to-r from-coral to-sunset px-6 py-3 font-semibold text-white shadow-[0_10px_30px_-10px_rgba(251,113,133,0.55)] transition hover:brightness-110 hover:shadow-[0_14px_36px_-10px_rgba(251,113,133,0.7)] focus:outline-none focus:ring-4 focus:ring-coral/40 disabled:cursor-not-allowed disabled:opacity-60;
   }
   .field-label {
-    @apply mb-1 block text-sm font-semibold text-slate-700;
+    @apply mb-1 block text-sm font-semibold text-lagoon;
   }
   .field-input {
-    @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm transition focus:border-ocean focus:outline-none focus:ring-2 focus:ring-ocean/30;
+    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-slate-100 placeholder-slate-500 shadow-inner backdrop-blur transition focus:border-lagoon focus:outline-none focus:ring-2 focus:ring-lagoon/40;
+  }
+  .field-input option {
+    @apply bg-midnight text-slate-100;
+  }
+  .card {
+    @apply rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur;
   }
 }

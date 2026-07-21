@@ -7,18 +7,56 @@
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 
+interface SocialInput {
+  platform?: string;
+  url?: string;
+}
+
 interface Body {
   prenom?: string;
   nom?: string;
+  blaze?: string;
   email?: string;
   telephone?: string;
-  ile?: string;
   age?: string | number;
   motivation?: string;
+  socials?: SocialInput[];
   hp?: string;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const ALLOWED_PLATFORMS = new Set([
+  "instagram",
+  "tiktok",
+  "youtube",
+  "twitter",
+  "facebook",
+  "twitch",
+  "snapchat",
+]);
+
+function sanitizeSocials(input: unknown): { platform: string; url: string }[] {
+  if (!Array.isArray(input)) return [];
+  const out: { platform: string; url: string }[] = [];
+  const seen = new Set<string>();
+  for (const raw of input.slice(0, 8)) {
+    const platform = String((raw as SocialInput)?.platform ?? "").toLowerCase();
+    let url = String((raw as SocialInput)?.url ?? "").trim();
+    if (!ALLOWED_PLATFORMS.has(platform) || !url || seen.has(platform)) continue;
+    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+    try {
+      // Validate as URL; reject anything that doesn't parse.
+      new URL(url);
+    } catch {
+      continue;
+    }
+    if (url.length > 500) continue;
+    seen.add(platform);
+    out.push({ platform, url });
+  }
+  return out;
+}
 
 function randomToken(): string {
   const bytes = new Uint8Array(32);
@@ -104,10 +142,11 @@ Deno.serve(async (req) => {
 
   const prenom = body.prenom?.trim() ?? "";
   const nom = body.nom?.trim() ?? "";
+  const blaze = body.blaze?.trim().slice(0, 60) ?? "";
   const email = body.email?.trim().toLowerCase() ?? "";
   const telephone = body.telephone?.trim() ?? "";
-  const ile = body.ile?.trim() ?? "";
   const motivation = body.motivation?.trim() ?? "";
+  const socials = sanitizeSocials(body.socials);
   const ageNum = typeof body.age === "number" ? body.age : parseInt(String(body.age ?? ""), 10);
 
   if (!prenom || !nom) {
@@ -122,11 +161,11 @@ Deno.serve(async (req) => {
   if (!Number.isFinite(ageNum) || ageNum < 18 || ageNum > 99) {
     return jsonResponse({ error: "Tu dois avoir au moins 18 ans." }, 400);
   }
-  if (!ile) {
-    return jsonResponse({ error: "Île obligatoire." }, 400);
-  }
   if (motivation.length < 10) {
     return jsonResponse({ error: "Motivation trop courte." }, 400);
+  }
+  if (socials.length === 0) {
+    return jsonResponse({ error: "Ajoute au moins un lien réseau social." }, 400);
   }
 
   const token = randomToken();
@@ -142,10 +181,11 @@ Deno.serve(async (req) => {
       {
         prenom,
         nom,
+        blaze: blaze || null,
         email,
         telephone,
         age: ageNum,
-        ile,
+        socials,
         motivation,
         verified: false,
         verified_at: null,
