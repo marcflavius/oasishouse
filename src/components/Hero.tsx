@@ -7,8 +7,8 @@ export default function Hero() {
         aria-hidden="true"
         className="absolute inset-0 -z-10 h-full w-full object-cover"
       />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-abyss/80 via-midnight/70 to-abyss" />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-ocean/30 via-transparent to-coral/20" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-abyss/50 via-midnight/40 to-abyss/70" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-ocean/30 via-transparent to-coral/10" />
 
       <div className="relative mx-auto max-w-3xl px-6 py-24 text-center sm:py-32">
         <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-lagoon drop-shadow">
