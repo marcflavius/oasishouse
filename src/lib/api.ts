@@ -108,3 +108,10 @@ export function adminList(
 ): Promise<{ participants: Participant[] }> {
   return callFunction("admin-participants", { password });
 }
+
+export function adminDelete(
+  password: string,
+  id: string
+): Promise<{ ok: true }> {
+  return callFunction("admin-delete-participant", { password, id });
+}

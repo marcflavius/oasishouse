@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { adminList, type Participant } from "../lib/api";
+import { adminDelete, adminList, type Participant } from "../lib/api";
 
 type State =
   | { kind: "locked" }
@@ -10,6 +10,8 @@ type State =
 export default function Admin() {
   const [password, setPassword] = useState("");
   const [state, setState] = useState<State>({ kind: "locked" });
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [rowError, setRowError] = useState<string | null>(null);
 
   async function onLogin(e: FormEvent) {
     e.preventDefault();
@@ -22,6 +24,27 @@ export default function Admin() {
         kind: "error",
         message: err instanceof Error ? err.message : "Erreur inconnue.",
       });
+    }
+  }
+
+  async function onDelete(p: Participant) {
+    if (state.kind !== "ready") return;
+    const label = p.blaze ? `« ${p.blaze} »` : `${p.prenom} ${p.nom}`;
+    if (!window.confirm(`Supprimer ${label} ? Cette action est définitive.`)) {
+      return;
+    }
+    setRowError(null);
+    setDeleting(p.id);
+    try {
+      await adminDelete(password, p.id);
+      setState({
+        kind: "ready",
+        participants: state.participants.filter((row) => row.id !== p.id),
+      });
+    } catch (err) {
+      setRowError(err instanceof Error ? err.message : "Erreur inconnue.");
+    } finally {
+      setDeleting(null);
     }
   }
 
@@ -67,6 +90,15 @@ export default function Admin() {
         Candidats ({rows.length})
       </h1>
 
+      {rowError && (
+        <p
+          role="alert"
+          className="mt-4 rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+        >
+          {rowError}
+        </p>
+      )}
+
       <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.03] shadow-lg backdrop-blur">
         <table className="min-w-full divide-y divide-white/10 text-sm">
           <thead className="bg-white/[0.02] text-left text-xs font-semibold uppercase tracking-wider text-lagoon">
@@ -77,6 +109,7 @@ export default function Admin() {
               <th className="px-4 py-3">Téléphone</th>
               <th className="px-4 py-3">Âge</th>
               <th className="px-4 py-3">Réseaux</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
@@ -116,12 +149,23 @@ export default function Admin() {
                     </div>
                   )}
                 </td>
+                <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <button
+                    type="button"
+                    onClick={() => onDelete(p)}
+                    disabled={deleting === p.id}
+                    className="rounded-full border border-red-400/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-200 transition hover:bg-red-500/20 disabled:opacity-50"
+                    aria-label={`Supprimer ${p.prenom} ${p.nom}`}
+                  >
+                    {deleting === p.id ? "Suppression…" : "Supprimer"}
+                  </button>
+                </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-4 py-10 text-center text-slate-500"
                 >
                   Aucun candidat pour le moment.

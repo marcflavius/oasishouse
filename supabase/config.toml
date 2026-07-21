@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.check-social]
 verify_jwt = false
+
+[functions.admin-delete-participant]
+verify_jwt = false

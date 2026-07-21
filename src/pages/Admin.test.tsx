@@ -6,13 +6,15 @@ import * as api from "../lib/api";
 
 vi.mock("../lib/api", async () => {
   const actual = await vi.importActual<typeof api>("../lib/api");
-  return { ...actual, adminList: vi.fn() };
+  return { ...actual, adminList: vi.fn(), adminDelete: vi.fn() };
 });
 
 const adminListMock = api.adminList as unknown as ReturnType<typeof vi.fn>;
+const adminDeleteMock = api.adminDelete as unknown as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   adminListMock.mockReset();
+  adminDeleteMock.mockReset();
 });
 
 describe("<Admin />", () => {
@@ -66,6 +68,97 @@ describe("<Admin />", () => {
 
     expect(await screen.findByText("Mot de passe incorrect.")).toBeInTheDocument();
     expect(screen.queryByText(/Candidats \(/)).not.toBeInTheDocument();
+  });
+
+  it("deletes a participant after confirmation and removes the row", async () => {
+    const user = userEvent.setup({ delay: null });
+    adminListMock.mockResolvedValue({
+      participants: [
+        {
+          id: "11111111-2222-3333-4444-555555555555",
+          created_at: "2026-07-20T12:00:00Z",
+          prenom: "Ana", nom: "Diaz", blaze: null,
+          email: "ana@example.com", telephone: "+594010101010",
+          age: 25, socials: [], motivation: "x",
+        },
+      ],
+    });
+    adminDeleteMock.mockResolvedValue({ ok: true });
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<Admin />);
+    await user.type(screen.getByPlaceholderText(/Mot de passe/i), "hunter2");
+    await user.click(screen.getByRole("button", { name: /Se connecter/i }));
+
+    await screen.findByText("Ana Diaz");
+    await user.click(screen.getByRole("button", { name: /Supprimer Ana Diaz/i }));
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(adminDeleteMock).toHaveBeenCalledWith(
+      "hunter2",
+      "11111111-2222-3333-4444-555555555555"
+    );
+    expect(await screen.findByText(/Aucun candidat/i)).toBeInTheDocument();
+    expect(screen.queryByText("Ana Diaz")).not.toBeInTheDocument();
+
+    confirmSpy.mockRestore();
+  });
+
+  it("does nothing if the user cancels the confirm dialog", async () => {
+    const user = userEvent.setup({ delay: null });
+    adminListMock.mockResolvedValue({
+      participants: [
+        {
+          id: "11111111-2222-3333-4444-555555555555",
+          created_at: "2026-07-20T12:00:00Z",
+          prenom: "Ana", nom: "Diaz", blaze: null,
+          email: "ana@example.com", telephone: "+594010101010",
+          age: 25, socials: [], motivation: "x",
+        },
+      ],
+    });
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    render(<Admin />);
+    await user.type(screen.getByPlaceholderText(/Mot de passe/i), "hunter2");
+    await user.click(screen.getByRole("button", { name: /Se connecter/i }));
+
+    await screen.findByText("Ana Diaz");
+    await user.click(screen.getByRole("button", { name: /Supprimer Ana Diaz/i }));
+
+    expect(adminDeleteMock).not.toHaveBeenCalled();
+    expect(screen.getByText("Ana Diaz")).toBeInTheDocument();
+
+    confirmSpy.mockRestore();
+  });
+
+  it("surfaces a delete error and keeps the row", async () => {
+    const user = userEvent.setup({ delay: null });
+    adminListMock.mockResolvedValue({
+      participants: [
+        {
+          id: "11111111-2222-3333-4444-555555555555",
+          created_at: "2026-07-20T12:00:00Z",
+          prenom: "Ana", nom: "Diaz", blaze: null,
+          email: "ana@example.com", telephone: "+594010101010",
+          age: 25, socials: [], motivation: "x",
+        },
+      ],
+    });
+    adminDeleteMock.mockRejectedValue(new Error("Erreur serveur."));
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<Admin />);
+    await user.type(screen.getByPlaceholderText(/Mot de passe/i), "hunter2");
+    await user.click(screen.getByRole("button", { name: /Se connecter/i }));
+
+    await screen.findByText("Ana Diaz");
+    await user.click(screen.getByRole("button", { name: /Supprimer Ana Diaz/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Erreur serveur.");
+    expect(screen.getByText("Ana Diaz")).toBeInTheDocument();
+
+    confirmSpy.mockRestore();
   });
 
   it("renders every returned participant (no verified filter)", async () => {
