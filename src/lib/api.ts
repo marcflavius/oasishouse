@@ -60,14 +60,23 @@ export interface SubscribeInput {
   hp: string; // honeypot — must stay empty
 }
 
-export function subscribe(input: SubscribeInput): Promise<{ ok: true }> {
+export interface SubscribeChallenge {
+  ok: true;
+  challenge: string;
+  hmac: string;
+}
+
+export function subscribe(input: SubscribeInput): Promise<SubscribeChallenge> {
   return callFunction("subscribe", input);
 }
 
-export type VerifyStatus = "success" | "already" | "invalid";
-
-export function verify(token: string): Promise<{ status: VerifyStatus }> {
-  return callFunction("verify", { token });
+export function verifyOtp(
+  challenge: string,
+  hmac: string,
+  code: string,
+  form: SubscribeInput
+): Promise<{ ok: true }> {
+  return callFunction("verify-otp", { challenge, hmac, code, form });
 }
 
 export interface Participant {
@@ -81,8 +90,6 @@ export interface Participant {
   age: number | null;
   socials: SocialLink[];
   motivation: string | null;
-  verified: boolean;
-  verified_at: string | null;
 }
 
 export function adminList(

@@ -6,13 +6,19 @@ import * as api from "../lib/api";
 
 vi.mock("../lib/api", async () => {
   const actual = await vi.importActual<typeof api>("../lib/api");
-  return { ...actual, subscribe: vi.fn() };
+  return {
+    ...actual,
+    subscribe: vi.fn(),
+    verifyOtp: vi.fn(),
+  };
 });
 
 const subscribeMock = api.subscribe as unknown as ReturnType<typeof vi.fn>;
+const verifyOtpMock = api.verifyOtp as unknown as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   subscribeMock.mockReset();
+  verifyOtpMock.mockReset();
 });
 
 async function fillMinimumForm(user: ReturnType<typeof userEvent.setup>) {
@@ -47,24 +53,31 @@ describe("<Inscription />", () => {
     ).toBeInTheDocument();
   });
 
-  it("submits when the form is valid and shows the success panel", async () => {
+  it("opens the OTP modal after a successful subscribe, then shows success on valid code", async () => {
     const user = userEvent.setup({ delay: null });
-    subscribeMock.mockResolvedValue({ ok: true });
+    subscribeMock.mockResolvedValue({ ok: true, challenge: "c1", hmac: "h1" });
+    verifyOtpMock.mockResolvedValue({ ok: true });
 
     render(<Inscription />);
     await fillMinimumForm(user);
     await addOneSocial(user);
     await user.click(screen.getByRole("button", { name: /Envoyer/i }));
 
-    expect(await screen.findByText(/Merci/i)).toBeInTheDocument();
+    // Modal is open — not the success panel yet.
+    expect(await screen.findByLabelText(/Code à 6 chiffres/i)).toBeInTheDocument();
     expect(subscribeMock).toHaveBeenCalledTimes(1);
-    const payload = subscribeMock.mock.calls[0][0];
-    expect(payload.email).toBe("ana@example.com");
-    expect(payload.socials).toEqual([
-      { platform: "instagram", url: "https://instagram.com/ana" },
-    ]);
-    // Blaze is optional and left blank in the minimum form.
-    expect(payload.blaze).toBe("");
+
+    const codeInput = screen.getByLabelText(/Code à 6 chiffres/i);
+    await user.type(codeInput, "123456");
+    await user.click(screen.getByRole("button", { name: /Valider mon code/i }));
+
+    expect(await screen.findByText(/Merci/i)).toBeInTheDocument();
+    expect(verifyOtpMock).toHaveBeenCalledTimes(1);
+    const [challenge, hmac, code, form] = verifyOtpMock.mock.calls[0];
+    expect(challenge).toBe("c1");
+    expect(hmac).toBe("h1");
+    expect(code).toBe("123456");
+    expect(form.email).toBe("ana@example.com");
   });
 
   it("shows the server error message when subscribe rejects", async () => {
@@ -77,11 +90,31 @@ describe("<Inscription />", () => {
     await user.click(screen.getByRole("button", { name: /Envoyer/i }));
 
     expect(await screen.findByText("Email invalide.")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Code à 6 chiffres/i)).not.toBeInTheDocument();
+  });
+
+  it("keeps the modal open and shows the error when the code is wrong", async () => {
+    const user = userEvent.setup({ delay: null });
+    subscribeMock.mockResolvedValue({ ok: true, challenge: "c1", hmac: "h1" });
+    verifyOtpMock.mockRejectedValue(new Error("Code incorrect."));
+
+    render(<Inscription />);
+    await fillMinimumForm(user);
+    await addOneSocial(user);
+    await user.click(screen.getByRole("button", { name: /Envoyer/i }));
+
+    const codeInput = await screen.findByLabelText(/Code à 6 chiffres/i);
+    await user.type(codeInput, "999999");
+    await user.click(screen.getByRole("button", { name: /Valider mon code/i }));
+
+    expect(await screen.findByText("Code incorrect.")).toBeInTheDocument();
+    expect(screen.queryByText(/Merci/i)).not.toBeInTheDocument();
   });
 
   it("includes the blaze nickname in the payload when filled", async () => {
     const user = userEvent.setup({ delay: null });
-    subscribeMock.mockResolvedValue({ ok: true });
+    subscribeMock.mockResolvedValue({ ok: true, challenge: "c1", hmac: "h1" });
+    verifyOtpMock.mockResolvedValue({ ok: true });
 
     render(<Inscription />);
     await fillMinimumForm(user);
@@ -89,7 +122,7 @@ describe("<Inscription />", () => {
     await addOneSocial(user);
     await user.click(screen.getByRole("button", { name: /Envoyer/i }));
 
-    await screen.findByText(/Merci/i);
+    await screen.findByLabelText(/Code à 6 chiffres/i);
     expect(subscribeMock.mock.calls[0][0].blaze).toBe("AnaTheStar");
   });
 });

@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from "react";
 import Hero from "../components/Hero";
+import OtpModal from "../components/OtpModal";
 import SocialsPicker from "../components/SocialsPicker";
 import { subscribe, type SubscribeInput } from "../lib/api";
 
 type Status =
   | { kind: "idle" }
   | { kind: "loading" }
+  | { kind: "otp"; challenge: string; hmac: string; snapshot: SubscribeInput }
   | { kind: "success" }
   | { kind: "error"; message: string };
 
@@ -40,9 +42,13 @@ export default function Inscription() {
     }
     setStatus({ kind: "loading" });
     try {
-      await subscribe(form);
-      setStatus({ kind: "success" });
-      setForm(EMPTY);
+      const res = await subscribe(form);
+      setStatus({
+        kind: "otp",
+        challenge: res.challenge,
+        hmac: res.hmac,
+        snapshot: form,
+      });
     } catch (err) {
       setStatus({
         kind: "error",
@@ -92,16 +98,17 @@ export default function Inscription() {
           Formulaire d'inscription
         </h2>
         <p className="mt-2 text-slate-400">
-          Remplis ce formulaire pour candidater. Tu recevras un email de
-          confirmation à valider pour finaliser ton inscription.
+          Remplis ce formulaire pour candidater. Tu recevras un code de
+          confirmation par email à saisir dans une fenêtre pour finaliser ton
+          inscription.
         </p>
 
         {status.kind === "success" ? (
           <div className="mt-8 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-6 text-emerald-200 backdrop-blur">
             <h3 className="text-lg font-semibold text-emerald-100">Merci&nbsp;!</h3>
             <p className="mt-1">
-              Un email de confirmation vient de t'être envoyé. Clique sur le
-              lien pour valider ta candidature.
+              Ta candidature est confirmée. Nous te recontacterons prochainement
+              pour la suite du casting.
             </p>
           </div>
         ) : (
@@ -241,6 +248,18 @@ export default function Inscription() {
           </form>
         )}
       </main>
+
+      {status.kind === "otp" && (
+        <OtpModal
+          form={status.snapshot}
+          initial={{ challenge: status.challenge, hmac: status.hmac }}
+          onSuccess={() => {
+            setStatus({ kind: "success" });
+            setForm(EMPTY);
+          }}
+          onCancel={() => setStatus({ kind: "idle" })}
+        />
+      )}
     </>
   );
 }

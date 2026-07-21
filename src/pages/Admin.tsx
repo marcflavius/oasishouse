@@ -10,7 +10,6 @@ type State =
 export default function Admin() {
   const [password, setPassword] = useState("");
   const [state, setState] = useState<State>({ kind: "locked" });
-  const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
 
   async function onLogin(e: FormEvent) {
     e.preventDefault();
@@ -60,31 +59,13 @@ export default function Admin() {
     );
   }
 
-  const rows = showVerifiedOnly
-    ? state.participants.filter((p) => p.verified)
-    : state.participants;
+  const rows = state.participants;
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">
-            Candidats ({rows.length})
-          </h1>
-          <p className="text-sm text-slate-400">
-            {state.participants.filter((p) => p.verified).length} vérifiés
-            sur {state.participants.length}
-          </p>
-        </div>
-        <label className="flex items-center gap-2 text-sm text-slate-300">
-          <input
-            type="checkbox"
-            checked={showVerifiedOnly}
-            onChange={(e) => setShowVerifiedOnly(e.target.checked)}
-          />
-          Afficher uniquement les vérifiés
-        </label>
-      </div>
+      <h1 className="text-2xl font-bold text-white">
+        Candidats ({rows.length})
+      </h1>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.03] shadow-lg backdrop-blur">
         <table className="min-w-full divide-y divide-white/10 text-sm">
@@ -96,7 +77,6 @@ export default function Admin() {
               <th className="px-4 py-3">Téléphone</th>
               <th className="px-4 py-3">Âge</th>
               <th className="px-4 py-3">Réseaux</th>
-              <th className="px-4 py-3">Vérifié</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
@@ -136,23 +116,12 @@ export default function Admin() {
                     </div>
                   )}
                 </td>
-                <td className="px-4 py-3">
-                  {p.verified ? (
-                    <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-xs font-semibold text-emerald-300">
-                      Oui
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-slate-400">
-                      En attente
-                    </span>
-                  )}
-                </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-4 py-10 text-center text-slate-500"
                 >
                   Aucun candidat pour le moment.

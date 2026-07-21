@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { subscribe, verify, adminList } from "./api";
+import { subscribe, verifyOtp, adminList } from "./api";
 
 const fetchMock = vi.fn();
 
@@ -20,7 +20,9 @@ function jsonRes(body: unknown, status = 200): Response {
 
 describe("subscribe()", () => {
   it("POSTs to the subscribe function with the anon key and returns the parsed body", async () => {
-    fetchMock.mockResolvedValue(jsonRes({ ok: true }));
+    fetchMock.mockResolvedValue(
+      jsonRes({ ok: true, challenge: "abc", hmac: "def" })
+    );
 
     const result = await subscribe({
       prenom: "Ana",
@@ -34,7 +36,7 @@ describe("subscribe()", () => {
       hp: "",
     });
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, challenge: "abc", hmac: "def" });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("https://test.supabase.co/functions/v1/subscribe");
@@ -81,11 +83,27 @@ describe("subscribe()", () => {
   });
 });
 
-describe("verify()", () => {
-  it("returns the parsed status", async () => {
-    fetchMock.mockResolvedValue(jsonRes({ status: "success" }));
-    const r = await verify("abc123");
-    expect(r).toEqual({ status: "success" });
+describe("verifyOtp()", () => {
+  it("POSTs challenge/hmac/code/form and returns ok", async () => {
+    fetchMock.mockResolvedValue(jsonRes({ ok: true }));
+    const form = {
+      prenom: "Ana",
+      nom: "Diaz",
+      blaze: "",
+      email: "ana@example.com",
+      telephone: "+5940101010",
+      age: "22",
+      motivation: "je veux tenter l'aventure",
+      socials: [{ platform: "instagram" as const, url: "https://instagram.com/ana" }],
+      hp: "",
+    };
+    const r = await verifyOtp("chal", "hmac", "123456", form);
+    expect(r).toEqual({ ok: true });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://test.supabase.co/functions/v1/verify-otp");
+    const body = JSON.parse(init.body);
+    expect(body).toMatchObject({ challenge: "chal", hmac: "hmac", code: "123456" });
+    expect(body.form.email).toBe("ana@example.com");
   });
 });
 

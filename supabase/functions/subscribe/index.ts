@@ -1,48 +1,47 @@
 // POST /functions/v1/subscribe
 // Body: { prenom, nom, blaze?, email, telephone, age, motivation, socials, hp }
 // - Validates input (see _shared/validation.ts), silently swallows honeypot submissions
-// - Inserts (or refreshes token for) a participant row
-// - Sends a French verification email via Resend
+// - Sends a 6-digit code via email using Resend
+// - Returns a signed challenge blob { challenge, hmac } — no participant row is
+//   created until verify-otp confirms the code.
 
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
+import { generateCode, sha256Hex, signChallenge } from "../_shared/otp.ts";
+import { checkRateLimit, clientIp } from "../_shared/ratelimit.ts";
 import { serviceClient } from "../_shared/supabase.ts";
-import { randomToken, validateSubscribeBody } from "../_shared/validation.ts";
+import { validateSubscribeBody } from "../_shared/validation.ts";
 
-function verificationEmailHtml(prenom: string, url: string): string {
+const CODE_TTL_MS = 15 * 60 * 1000;
+
+function codeEmailHtml(prenom: string, code: string): string {
   return `
     <div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 560px; margin: 0 auto; color: #0f172a;">
-      <h1 style="color:#0ea5e9;">Confirme ta candidature</h1>
+      <h1 style="color:#0ea5e9;">Ton code de confirmation</h1>
       <p>Bonjour ${prenom},</p>
-      <p>Merci pour ton inscription au casting <strong>Oasis House Caribbean</strong> !
-         Pour finaliser ta candidature, clique sur le bouton ci-dessous&nbsp;:</p>
+      <p>Voici ton code pour finaliser ton inscription au casting
+         <strong>Oasis House Caribbean</strong>&nbsp;:</p>
       <p style="text-align:center; margin: 32px 0;">
-        <a href="${url}"
-           style="display:inline-block; background:#ff6b6b; color:white; padding:14px 28px; border-radius:9999px; text-decoration:none; font-weight:600;">
-          Confirmer mon email
-        </a>
+        <span style="display:inline-block; letter-spacing: 12px; font-size: 40px;
+                     font-weight: 700; font-family: 'SF Mono', Menlo, Consolas, monospace;
+                     background: #f1f5f9; color: #0f172a; padding: 16px 24px;
+                     border-radius: 12px;">
+          ${code}
+        </span>
       </p>
-      <p style="font-size: 13px; color:#64748b;">
-        Si le bouton ne fonctionne pas, copie ce lien dans ton navigateur&nbsp;:<br />
-        <a href="${url}">${url}</a>
+      <p style="font-size: 14px; color:#64748b;">
+        Saisis ce code dans la fenêtre ouverte sur le site pour valider ta candidature.
       </p>
-      <p style="font-size: 13px; color:#64748b;">Ce lien expire dans 24 heures.</p>
+      <p style="font-size: 13px; color:#94a3b8;">Ce code expire dans 15 minutes.</p>
     </div>
   `;
 }
 
-async function sendVerificationEmail(
-  to: string,
-  prenom: string,
-  token: string
-): Promise<void> {
+async function sendCodeEmail(to: string, prenom: string, code: string): Promise<void> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   const from = Deno.env.get("RESEND_FROM");
-  const site = Deno.env.get("SITE_URL");
-  if (!apiKey || !from || !site) {
-    throw new Error("RESEND_API_KEY / RESEND_FROM / SITE_URL missing.");
+  if (!apiKey || !from) {
+    throw new Error("RESEND_API_KEY / RESEND_FROM missing.");
   }
-
-  const url = `${site.replace(/\/$/, "")}/verifier?token=${token}`;
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -53,8 +52,8 @@ async function sendVerificationEmail(
     body: JSON.stringify({
       from,
       to,
-      subject: "Confirme ton inscription — Oasis House Caribbean",
-      html: verificationEmailHtml(prenom, url),
+      subject: "Ton code de confirmation — Oasis House Caribbean",
+      html: codeEmailHtml(prenom, code),
     }),
   });
 
@@ -72,6 +71,16 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Méthode non autorisée." }, 405);
   }
 
+  const supabase = serviceClient();
+
+  const rl = await checkRateLimit(supabase, clientIp(req), "subscribe", 5, 15);
+  if (!rl.allowed) {
+    return jsonResponse(
+      { error: "Trop de tentatives. Réessaie dans quelques minutes." },
+      429
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -84,38 +93,31 @@ Deno.serve(async (req) => {
   if (result.honeypot) return jsonResponse({ ok: true });
 
   const clean = result.data;
-  const token = randomToken();
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const code = generateCode();
+  const code_hash = await sha256Hex(code);
+  const expires_at = Date.now() + CODE_TTL_MS;
 
-  const supabase = serviceClient();
-
-  // Upsert by email: if the person re-submits, refresh their token & data
-  // instead of rejecting on the unique constraint.
-  const { error } = await supabase.from("participants").upsert(
-    {
-      ...clean,
-      verified: false,
-      verified_at: null,
-      verification_token: token,
-      token_expires_at: expires,
-    },
-    { onConflict: "email" }
-  );
-
-  if (error) {
-    console.error("insert error", error);
-    return jsonResponse({ error: "Impossible d'enregistrer l'inscription." }, 500);
+  let signed;
+  try {
+    signed = await signChallenge({
+      email: clean.email,
+      code_hash,
+      expires_at,
+    });
+  } catch (err) {
+    console.error("challenge sign error", err);
+    return jsonResponse({ error: "Erreur serveur." }, 500);
   }
 
   try {
-    await sendVerificationEmail(clean.email, clean.prenom, token);
+    await sendCodeEmail(clean.email, clean.prenom, code);
   } catch (err) {
     console.error("email error", err);
     return jsonResponse(
-      { error: "Inscription enregistrée mais l'email n'a pas pu être envoyé." },
+      { error: "Impossible d'envoyer l'email de confirmation. Vérifie ton adresse." },
       500
     );
   }
 
-  return jsonResponse({ ok: true });
+  return jsonResponse({ ok: true, challenge: signed.challenge, hmac: signed.hmac });
 });

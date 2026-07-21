@@ -1,8 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   ALLOWED_PLATFORMS,
-  decideVerifyStatus,
-  randomToken,
   safeEqual,
   sanitizeSocials,
   validateSubscribeBody,
@@ -143,42 +141,6 @@ Deno.test("validateSubscribeBody — accepts numeric age", () => {
   assertEquals(r.data.age, 30);
 });
 
-// ---------------------------------------------------------------- decideVerifyStatus
-
-Deno.test("decideVerifyStatus — invalid when row is null", () => {
-  assertEquals(decideVerifyStatus(null), "invalid");
-});
-
-Deno.test("decideVerifyStatus — already when row is already verified", () => {
-  assertEquals(
-    decideVerifyStatus({ verified: true, token_expires_at: null }),
-    "already"
-  );
-});
-
-Deno.test("decideVerifyStatus — invalid when token is expired", () => {
-  const past = new Date(Date.now() - 60_000).toISOString();
-  assertEquals(
-    decideVerifyStatus({ verified: false, token_expires_at: past }),
-    "invalid"
-  );
-});
-
-Deno.test("decideVerifyStatus — success when unverified and not expired", () => {
-  const future = new Date(Date.now() + 60_000).toISOString();
-  assertEquals(
-    decideVerifyStatus({ verified: false, token_expires_at: future }),
-    "success"
-  );
-});
-
-Deno.test("decideVerifyStatus — success when unverified and no expiry set", () => {
-  assertEquals(
-    decideVerifyStatus({ verified: false, token_expires_at: null }),
-    "success"
-  );
-});
-
 // ---------------------------------------------------------------- safeEqual
 
 Deno.test("safeEqual — true for identical strings", () => {
@@ -197,16 +159,3 @@ Deno.test("safeEqual — true for empty strings", () => {
   assertEquals(safeEqual("", ""), true);
 });
 
-// ---------------------------------------------------------------- randomToken
-
-Deno.test("randomToken — returns 64 lowercase hex chars", () => {
-  const t = randomToken();
-  assertEquals(t.length, 64);
-  assertEquals(/^[0-9a-f]{64}$/.test(t), true);
-});
-
-Deno.test("randomToken — is different each call", () => {
-  const a = randomToken();
-  const b = randomToken();
-  if (a === b) throw new Error("random tokens should not collide");
-});

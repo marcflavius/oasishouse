@@ -3,6 +3,7 @@
 // Returns: { participants: Participant[] }
 
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
+import { checkRateLimit, clientIp } from "../_shared/ratelimit.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { safeEqual } from "../_shared/validation.ts";
 
@@ -12,6 +13,22 @@ Deno.serve(async (req) => {
 
   if (req.method !== "POST") {
     return jsonResponse({ error: "Méthode non autorisée." }, 405);
+  }
+
+  const supabase = serviceClient();
+
+  const rl = await checkRateLimit(
+    supabase,
+    clientIp(req),
+    "admin-participants",
+    20,
+    5
+  );
+  if (!rl.allowed) {
+    return jsonResponse(
+      { error: "Trop de tentatives. Réessaie dans quelques minutes." },
+      429
+    );
   }
 
   const expected = Deno.env.get("ADMIN_PASSWORD");
@@ -33,12 +50,10 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Mot de passe incorrect." }, 401);
   }
 
-  const supabase = serviceClient();
-
   const { data, error } = await supabase
     .from("participants")
     .select(
-      "id, created_at, prenom, nom, blaze, email, telephone, age, socials, motivation, verified, verified_at"
+      "id, created_at, prenom, nom, blaze, email, telephone, age, socials, motivation"
     )
     .order("created_at", { ascending: false });
 

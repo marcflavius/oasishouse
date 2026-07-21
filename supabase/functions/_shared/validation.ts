@@ -129,28 +129,3 @@ export function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-// Random hex token, 64 chars from 32 random bytes.
-export function randomToken(): string {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-export type VerifyStatus = "success" | "already" | "invalid";
-
-export interface VerifyRow {
-  verified: boolean;
-  token_expires_at: string | null;
-}
-
-// Pure state machine: given the row (or null) and the current time,
-// decide what /verify should respond with.
-export function decideVerifyStatus(
-  row: VerifyRow | null,
-  now: Date = new Date()
-): VerifyStatus {
-  if (!row) return "invalid";
-  if (row.verified) return "already";
-  if (row.token_expires_at && new Date(row.token_expires_at) < now) return "invalid";
-  return "success";
-}

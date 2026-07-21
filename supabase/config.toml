@@ -3,7 +3,7 @@ project_id = "oasishouse-caribbean"
 [functions.subscribe]
 verify_jwt = false
 
-[functions.verify]
+[functions.verify-otp]
 verify_jwt = false
 
 [functions.admin-participants]

@@ -37,8 +37,6 @@ describe("<Admin />", () => {
           age: 25,
           socials: [{ platform: "instagram", url: "https://instagram.com/ana" }],
           motivation: "aventure",
-          verified: true,
-          verified_at: "2026-07-20T12:05:00Z",
         },
       ],
     });
@@ -67,12 +65,10 @@ describe("<Admin />", () => {
     await user.click(screen.getByRole("button", { name: /Se connecter/i }));
 
     expect(await screen.findByText("Mot de passe incorrect.")).toBeInTheDocument();
-    // The admin table header renders as "Candidats (N)" — differ from the
-    // "voir la liste des candidats" copy on the locked screen.
     expect(screen.queryByText(/Candidats \(/)).not.toBeInTheDocument();
   });
 
-  it("filters to verified-only when the checkbox is ticked", async () => {
+  it("renders every returned participant (no verified filter)", async () => {
     const user = userEvent.setup({ delay: null });
     adminListMock.mockResolvedValue({
       participants: [
@@ -81,14 +77,12 @@ describe("<Admin />", () => {
           prenom: "Ana", nom: "Diaz", blaze: null,
           email: "ana@example.com", telephone: "+594010101010",
           age: 25, socials: [], motivation: "x",
-          verified: true, verified_at: "2026-07-20T12:05:00Z",
         },
         {
           id: "2", created_at: "2026-07-20T13:00:00Z",
           prenom: "Bob", nom: "Nom", blaze: null,
           email: "bob@example.com", telephone: "+594020202020",
           age: 30, socials: [], motivation: "y",
-          verified: false, verified_at: null,
         },
       ],
     });
@@ -96,12 +90,9 @@ describe("<Admin />", () => {
     render(<Admin />);
     await user.type(screen.getByPlaceholderText(/Mot de passe/i), "ok");
     await user.click(screen.getByRole("button", { name: /Se connecter/i }));
-    await screen.findByText("Ana Diaz");
-    expect(screen.getByText("Bob Nom")).toBeInTheDocument();
 
-    await user.click(screen.getByLabelText(/Afficher uniquement les vérifiés/i));
-
+    expect(await screen.findByText(/Candidats \(2\)/i)).toBeInTheDocument();
     expect(screen.getByText("Ana Diaz")).toBeInTheDocument();
-    expect(screen.queryByText("Bob Nom")).not.toBeInTheDocument();
+    expect(screen.getByText("Bob Nom")).toBeInTheDocument();
   });
 });
