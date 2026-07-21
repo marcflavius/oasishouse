@@ -79,6 +79,17 @@ export function verifyOtp(
   return callFunction("verify-otp", { challenge, hmac, code, form });
 }
 
+export interface CheckSocialResult {
+  ok: true;
+  exists: boolean;
+  status: number;
+  unknown?: true;
+}
+
+export function checkSocial(url: string): Promise<CheckSocialResult> {
+  return callFunction("check-social", { url });
+}
+
 export interface Participant {
   id: string;
   created_at: string;

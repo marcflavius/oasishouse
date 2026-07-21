@@ -10,15 +10,19 @@ vi.mock("../lib/api", async () => {
     ...actual,
     subscribe: vi.fn(),
     verifyOtp: vi.fn(),
+    checkSocial: vi.fn(),
   };
 });
 
 const subscribeMock = api.subscribe as unknown as ReturnType<typeof vi.fn>;
 const verifyOtpMock = api.verifyOtp as unknown as ReturnType<typeof vi.fn>;
+const checkSocialMock = api.checkSocial as unknown as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   subscribeMock.mockReset();
   verifyOtpMock.mockReset();
+  checkSocialMock.mockReset();
+  checkSocialMock.mockResolvedValue({ ok: true, exists: true, status: 200 });
 });
 
 async function fillMinimumForm(user: ReturnType<typeof userEvent.setup>) {

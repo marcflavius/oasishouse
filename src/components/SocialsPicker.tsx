@@ -1,4 +1,5 @@
 import { useRef, useState, type KeyboardEvent } from "react";
+import { checkSocial } from "../lib/api";
 import {
   DEFS,
   PLATFORMS,
@@ -79,6 +80,7 @@ export default function SocialsPicker({ value, onChange }: Props) {
   const [active, setActive] = useState<Platform | null>(null);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const used = new Set(value.map((v) => v.platform));
@@ -97,10 +99,11 @@ export default function SocialsPicker({ value, onChange }: Props) {
     setActive(null);
     setDraft("");
     setError(null);
+    setChecking(false);
   }
 
-  function commit() {
-    if (!active) return;
+  async function commit() {
+    if (!active || checking) return;
     if (!draft.trim()) {
       cancel();
       return;
@@ -110,6 +113,25 @@ export default function SocialsPicker({ value, onChange }: Props) {
       setError(result.error);
       return;
     }
+
+    // Ping the URL to catch typos that produce dead profiles. Fail-open on
+    // network errors so a transient hiccup can't block a genuinely-valid handle.
+    setError(null);
+    setChecking(true);
+    try {
+      const check = await checkSocial(result.url);
+      if (!check.exists) {
+        setError(
+          `Ce compte ${DEFS[active].label} est introuvable. Vérifie ton pseudo.`
+        );
+        setChecking(false);
+        return;
+      }
+    } catch {
+      // ignore — treat as unknown / accept
+    }
+    setChecking(false);
+
     const next = value.filter((v) => v.platform !== active);
     next.push({ platform: active, url: result.url });
     onChange(next);
@@ -222,13 +244,19 @@ export default function SocialsPicker({ value, onChange }: Props) {
                 className="flex-1 min-w-0 bg-transparent px-1 py-2.5 text-white placeholder:text-slate-500 focus:outline-none"
               />
             </div>
-            <button type="button" onClick={commit} className="btn-primary !py-2 !px-4 text-sm">
-              Ajouter
+            <button
+              type="button"
+              onClick={commit}
+              disabled={checking}
+              className="btn-primary !py-2 !px-4 text-sm"
+            >
+              {checking ? "Vérification…" : "Ajouter"}
             </button>
             <button
               type="button"
               onClick={cancel}
-              className="rounded-full px-3 py-2 text-sm text-slate-400 hover:text-white"
+              disabled={checking}
+              className="rounded-full px-3 py-2 text-sm text-slate-400 hover:text-white disabled:opacity-40"
             >
               Annuler
             </button>

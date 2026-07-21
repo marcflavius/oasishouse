@@ -1,8 +1,21 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import SocialsPicker, { type SocialLink } from "./SocialsPicker";
+import * as api from "../lib/api";
+
+vi.mock("../lib/api", async () => {
+  const actual = await vi.importActual<typeof api>("../lib/api");
+  return { ...actual, checkSocial: vi.fn() };
+});
+
+const checkSocialMock = api.checkSocial as unknown as ReturnType<typeof vi.fn>;
+
+beforeEach(() => {
+  // Default: URL exists — so existing "happy path" tests don't need per-test setup.
+  checkSocialMock.mockResolvedValue({ ok: true, exists: true, status: 200 });
+});
 
 function Wrapper({ initial = [] as SocialLink[] }: { initial?: SocialLink[] }) {
   const [value, setValue] = useState<SocialLink[]>(initial);
@@ -84,6 +97,32 @@ describe("<SocialsPicker />", () => {
       screen.queryByPlaceholderText("tonpseudo")
     ).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Retirer Instagram/i)).not.toBeInTheDocument();
+  });
+
+  it("rejects a handle when the existence check returns exists=false", async () => {
+    const user = userEvent.setup({ delay: null });
+    checkSocialMock.mockResolvedValue({ ok: true, exists: false, status: 404 });
+    render(<Wrapper />);
+
+    await user.click(screen.getByLabelText(/Ajouter Instagram/i));
+    await user.type(await screen.findByPlaceholderText("tonpseudo"), "ana{Enter}");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /Ce compte Instagram est introuvable/i
+    );
+    expect(screen.queryByLabelText(/Retirer Instagram/i)).not.toBeInTheDocument();
+    expect(checkSocialMock).toHaveBeenCalledWith("https://instagram.com/ana");
+  });
+
+  it("accepts the handle when the existence check throws (fail-open)", async () => {
+    const user = userEvent.setup({ delay: null });
+    checkSocialMock.mockRejectedValue(new Error("network down"));
+    render(<Wrapper />);
+
+    await user.click(screen.getByLabelText(/Ajouter Instagram/i));
+    await user.type(await screen.findByPlaceholderText("tonpseudo"), "ana{Enter}");
+
+    expect(await screen.findByLabelText(/Retirer Instagram/i)).toBeInTheDocument();
   });
 
   it("propagates onChange with the full pool", async () => {
