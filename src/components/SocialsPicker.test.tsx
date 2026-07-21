@@ -31,8 +31,8 @@ describe("<SocialsPicker />", () => {
     render(<Wrapper />);
 
     await user.click(screen.getByLabelText(/Ajouter Instagram/i));
-    const input = await screen.findByPlaceholderText(/instagram\.com\/tonpseudo/i);
-    await user.type(input, "instagram.com/ana{Enter}");
+    const input = await screen.findByPlaceholderText("tonpseudo");
+    await user.type(input, "ana{Enter}");
 
     // pool now shows the "retirer" remove button for the added link
     expect(screen.getByLabelText(/Retirer Instagram/i)).toBeInTheDocument();
@@ -40,15 +40,18 @@ describe("<SocialsPicker />", () => {
     expect(screen.queryByText(/pool est vide/i)).not.toBeInTheDocument();
   });
 
-  it("shows a validation error for a wrong-platform url and does not add it", async () => {
+  it("shows a validation error for an invalid handle and does not add it", async () => {
     const user = userEvent.setup({ delay: null });
     render(<Wrapper />);
 
     await user.click(screen.getByLabelText(/Ajouter Instagram/i));
-    const input = await screen.findByPlaceholderText(/instagram\.com\/tonpseudo/i);
-    await user.type(input, "https://facebook.com/foo{Enter}");
+    const input = await screen.findByPlaceholderText("tonpseudo");
+    // Spaces aren't allowed in Instagram handles.
+    await user.type(input, "hi there{Enter}");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/Instagram invalide/i);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /Pseudo Instagram invalide/i
+    );
     expect(screen.queryByLabelText(/Retirer Instagram/i)).not.toBeInTheDocument();
   });
 
@@ -72,13 +75,13 @@ describe("<SocialsPicker />", () => {
 
     await user.click(screen.getByLabelText(/Ajouter Instagram/i));
     await user.type(
-      await screen.findByPlaceholderText(/instagram\.com\/tonpseudo/i),
+      await screen.findByPlaceholderText("tonpseudo"),
       "instagram.com/ana"
     );
     await user.click(screen.getByRole("button", { name: /Annuler/i }));
 
     expect(
-      screen.queryByPlaceholderText(/instagram\.com\/tonpseudo/i)
+      screen.queryByPlaceholderText("tonpseudo")
     ).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Retirer Instagram/i)).not.toBeInTheDocument();
   });
@@ -90,7 +93,7 @@ describe("<SocialsPicker />", () => {
 
     await user.click(screen.getByLabelText(/Ajouter Instagram/i));
     await user.type(
-      await screen.findByPlaceholderText(/instagram\.com\/tonpseudo/i),
+      await screen.findByPlaceholderText("tonpseudo"),
       "instagram.com/ana{Enter}"
     );
 

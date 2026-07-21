@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { PLATFORMS, normalizeUrl, validateSocialUrl } from "./socials";
+import {
+  PLATFORMS,
+  extractUsername,
+  normalizeUrl,
+  validateSocialUrl,
+  validateUsername,
+} from "./socials";
 
 describe("normalizeUrl", () => {
   it("trims whitespace", () => {
@@ -69,6 +75,83 @@ describe("validateSocialUrl", () => {
   it("rejects empty urls", () => {
     const r = validateSocialUrl("instagram", "");
     expect(r.ok).toBe(false);
+  });
+});
+
+describe("extractUsername", () => {
+  it("returns the input as-is for a bare handle", () => {
+    expect(extractUsername("ana")).toBe("ana");
+  });
+
+  it("strips a leading @", () => {
+    expect(extractUsername("@ana")).toBe("ana");
+    expect(extractUsername("@@ana")).toBe("ana");
+  });
+
+  it("extracts the last path segment from a full URL", () => {
+    expect(extractUsername("https://instagram.com/ana")).toBe("ana");
+    expect(extractUsername("https://tiktok.com/@ana")).toBe("ana");
+    expect(extractUsername("https://youtube.com/@tachaine/videos")).toBe("videos");
+  });
+
+  it("handles scheme-less domain-shaped input", () => {
+    expect(extractUsername("instagram.com/ana")).toBe("ana");
+  });
+
+  it("returns empty string for empty input", () => {
+    expect(extractUsername("")).toBe("");
+    expect(extractUsername("   ")).toBe("");
+  });
+});
+
+describe("validateUsername", () => {
+  it("builds the canonical URL for a valid handle", () => {
+    const r = validateUsername("instagram", "ana");
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.username).toBe("ana");
+      expect(r.url).toBe("https://instagram.com/ana");
+    }
+  });
+
+  it("prefixes TikTok with @ automatically", () => {
+    const r = validateUsername("tiktok", "ana");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.url).toBe("https://tiktok.com/@ana");
+  });
+
+  it("strips a leading @ from user input", () => {
+    const r = validateUsername("instagram", "@ana");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.url).toBe("https://instagram.com/ana");
+  });
+
+  it("accepts a pasted full URL and reduces it to a handle", () => {
+    const r = validateUsername("instagram", "https://instagram.com/ana");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.url).toBe("https://instagram.com/ana");
+  });
+
+  it("rejects empty input", () => {
+    const r = validateUsername("instagram", "");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/Entre ton pseudo/);
+  });
+
+  it("rejects handles with invalid characters", () => {
+    const r = validateUsername("instagram", "hi there");
+    expect(r.ok).toBe(false);
+  });
+
+  it("enforces the 15-char cap on X handles", () => {
+    const r = validateUsername("twitter", "way_too_long_username_here");
+    expect(r.ok).toBe(false);
+  });
+
+  it("Snapchat builds the /add/ URL", () => {
+    const r = validateUsername("snapchat", "ana");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.url).toBe("https://snapchat.com/add/ana");
   });
 });
 

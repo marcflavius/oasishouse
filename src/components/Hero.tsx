@@ -1,12 +1,27 @@
+import { useState } from "react";
+
 export default function Hero() {
+  const [loaded, setLoaded] = useState(false);
+
   return (
-    <header className="relative isolate overflow-hidden text-white">
-      <img
-        src="/hero_oasishouse.jpg"
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 -z-10 h-full w-full object-cover"
-      />
+    <header className="relative isolate overflow-hidden bg-abyss text-white">
+      <picture>
+        <source srcSet="/hero_oasishouse.avif" type="image/avif" />
+        <source srcSet="/hero_oasishouse.webp" type="image/webp" />
+        <img
+          src="/hero_oasishouse.jpg"
+          alt=""
+          aria-hidden="true"
+          width={1254}
+          height={1254}
+          fetchPriority="high"
+          decoding="async"
+          onLoad={() => setLoaded(true)}
+          className={`absolute inset-0 -z-10 h-full w-full object-cover transition-opacity duration-700 ease-out ${
+            loaded ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      </picture>
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-abyss/50 via-midnight/40 to-abyss/70" />
       <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-ocean/30 via-transparent to-coral/10" />
 

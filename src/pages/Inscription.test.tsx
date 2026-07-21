@@ -29,8 +29,8 @@ async function fillMinimumForm(user: ReturnType<typeof userEvent.setup>) {
 
 async function addOneSocial(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByLabelText(/Ajouter Instagram/i));
-  const input = await screen.findByPlaceholderText(/instagram\.com\/tonpseudo/i);
-  await user.type(input, "instagram.com/ana{Enter}");
+  const input = await screen.findByPlaceholderText("tonpseudo");
+  await user.type(input, "ana{Enter}");
 }
 
 describe("<Inscription />", () => {

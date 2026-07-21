@@ -1,5 +1,11 @@
 import { useRef, useState, type KeyboardEvent } from "react";
-import { DEFS, PLATFORMS, validateSocialUrl, type Platform } from "../lib/socials";
+import {
+  DEFS,
+  PLATFORMS,
+  extractUsername,
+  validateUsername,
+  type Platform,
+} from "../lib/socials";
 
 export type { Platform } from "../lib/socials";
 
@@ -80,7 +86,10 @@ export default function SocialsPicker({ value, onChange }: Props) {
   function openPlatform(p: Platform) {
     setActive(p);
     setError(null);
-    setDraft(value.find((v) => v.platform === p)?.url ?? "");
+    // When editing an existing link, extract just the username so the input
+    // only shows the handle (not the full URL).
+    const existing = value.find((v) => v.platform === p)?.url ?? "";
+    setDraft(existing ? extractUsername(existing) : "");
     setTimeout(() => inputRef.current?.focus(), 0);
   }
 
@@ -96,7 +105,7 @@ export default function SocialsPicker({ value, onChange }: Props) {
       cancel();
       return;
     }
-    const result = validateSocialUrl(active, draft);
+    const result = validateUsername(active, draft);
     if (!result.ok) {
       setError(result.error);
       return;
@@ -183,22 +192,36 @@ export default function SocialsPicker({ value, onChange }: Props) {
             >
               <Glyph platform={active} className="h-4 w-4" />
             </span>
-            <input
-              ref={inputRef}
-              type="url"
-              inputMode="url"
-              value={draft}
-              onChange={(e) => {
-                setDraft(e.target.value);
-                if (error) setError(null);
-              }}
-              onKeyDown={onKey}
-              placeholder={`https://${DEFS[active].hint}`}
-              aria-invalid={error ? true : undefined}
-              className={`field-input flex-1 min-w-[200px] ${
-                error ? "!border-red-400/60 !ring-red-400/30" : ""
+            <div
+              className={`flex flex-1 min-w-[240px] items-center overflow-hidden rounded-xl border bg-white/5 pl-3 transition ${
+                error
+                  ? "border-red-400/60 ring-2 ring-red-400/30"
+                  : "border-white/15 focus-within:border-ocean focus-within:ring-2 focus-within:ring-ocean/30"
               }`}
-            />
+            >
+              <span className="select-none whitespace-nowrap text-sm text-slate-400">
+                https://{DEFS[active].urlPrefix}
+              </span>
+              <input
+                ref={inputRef}
+                type="text"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                value={draft}
+                onChange={(e) => {
+                  // If the user pastes a full URL, extract the handle so what
+                  // they see in the input matches what will be sent.
+                  const raw = e.target.value;
+                  setDraft(/^https?:\/\//i.test(raw) ? extractUsername(raw) : raw);
+                  if (error) setError(null);
+                }}
+                onKeyDown={onKey}
+                placeholder={DEFS[active].usernameHint}
+                aria-invalid={error ? true : undefined}
+                className="flex-1 min-w-0 bg-transparent px-1 py-2.5 text-white placeholder:text-slate-500 focus:outline-none"
+              />
+            </div>
             <button type="button" onClick={commit} className="btn-primary !py-2 !px-4 text-sm">
               Ajouter
             </button>
@@ -237,7 +260,7 @@ export default function SocialsPicker({ value, onChange }: Props) {
               return (
                 <li
                   key={link.platform}
-                  className="group flex items-center gap-1 rounded-full border border-white/15 bg-white/10 py-1 pl-1 pr-1.5 text-white shadow-sm transition hover:bg-white/15"
+                  className="group flex items-center gap-2 rounded-full border border-white/15 bg-white/10 py-1 pl-1 pr-1.5 text-sm text-white shadow-sm transition hover:bg-white/15"
                   title={link.url}
                 >
                   <span
@@ -245,6 +268,9 @@ export default function SocialsPicker({ value, onChange }: Props) {
                     style={{ backgroundColor: def.prerendered ? "transparent" : def.color }}
                   >
                     <Glyph platform={link.platform} className="h-4 w-4" />
+                  </span>
+                  <span className="max-w-[140px] truncate">
+                    @{extractUsername(link.url)}
                   </span>
                   <button
                     type="button"
