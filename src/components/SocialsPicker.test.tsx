@@ -1,0 +1,101 @@
+import { describe, it, expect, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { useState } from "react";
+import SocialsPicker, { type SocialLink } from "./SocialsPicker";
+
+function Wrapper({ initial = [] as SocialLink[] }: { initial?: SocialLink[] }) {
+  const [value, setValue] = useState<SocialLink[]>(initial);
+  return <SocialsPicker value={value} onChange={setValue} />;
+}
+
+describe("<SocialsPicker />", () => {
+  it("renders one button per platform", () => {
+    render(<Wrapper />);
+    expect(screen.getByLabelText(/Ajouter Instagram/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Ajouter TikTok/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Ajouter YouTube/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Ajouter X/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Ajouter Facebook/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Ajouter Twitch/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Ajouter Snapchat/i)).toBeInTheDocument();
+  });
+
+  it("shows the empty-pool hint when no link is added", () => {
+    render(<Wrapper />);
+    expect(screen.getByText(/pool est vide/i)).toBeInTheDocument();
+  });
+
+  it("adds a valid link to the pool after Enter", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<Wrapper />);
+
+    await user.click(screen.getByLabelText(/Ajouter Instagram/i));
+    const input = await screen.findByPlaceholderText(/instagram\.com\/tonpseudo/i);
+    await user.type(input, "instagram.com/ana{Enter}");
+
+    // pool now shows the "retirer" remove button for the added link
+    expect(screen.getByLabelText(/Retirer Instagram/i)).toBeInTheDocument();
+    // empty-pool hint is gone
+    expect(screen.queryByText(/pool est vide/i)).not.toBeInTheDocument();
+  });
+
+  it("shows a validation error for a wrong-platform url and does not add it", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<Wrapper />);
+
+    await user.click(screen.getByLabelText(/Ajouter Instagram/i));
+    const input = await screen.findByPlaceholderText(/instagram\.com\/tonpseudo/i);
+    await user.type(input, "https://facebook.com/foo{Enter}");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/Instagram invalide/i);
+    expect(screen.queryByLabelText(/Retirer Instagram/i)).not.toBeInTheDocument();
+  });
+
+  it("removes a link from the pool when its × is clicked", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(
+      <Wrapper
+        initial={[{ platform: "instagram", url: "https://instagram.com/ana" }]}
+      />
+    );
+
+    await user.click(screen.getByLabelText(/Retirer Instagram/i));
+
+    expect(screen.queryByLabelText(/Retirer Instagram/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/pool est vide/i)).toBeInTheDocument();
+  });
+
+  it("clicking Annuler closes the editor without adding", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<Wrapper />);
+
+    await user.click(screen.getByLabelText(/Ajouter Instagram/i));
+    await user.type(
+      await screen.findByPlaceholderText(/instagram\.com\/tonpseudo/i),
+      "instagram.com/ana"
+    );
+    await user.click(screen.getByRole("button", { name: /Annuler/i }));
+
+    expect(
+      screen.queryByPlaceholderText(/instagram\.com\/tonpseudo/i)
+    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Retirer Instagram/i)).not.toBeInTheDocument();
+  });
+
+  it("propagates onChange with the full pool", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onChange = vi.fn();
+    render(<SocialsPicker value={[]} onChange={onChange} />);
+
+    await user.click(screen.getByLabelText(/Ajouter Instagram/i));
+    await user.type(
+      await screen.findByPlaceholderText(/instagram\.com\/tonpseudo/i),
+      "instagram.com/ana{Enter}"
+    );
+
+    expect(onChange).toHaveBeenCalledWith([
+      { platform: "instagram", url: "https://instagram.com/ana" },
+    ]);
+  });
+});

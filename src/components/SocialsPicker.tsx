@@ -1,62 +1,9 @@
 import { useRef, useState, type KeyboardEvent } from "react";
+import { DEFS, PLATFORMS, validateSocialUrl, type Platform } from "../lib/socials";
 
-export type Platform =
-  | "instagram"
-  | "tiktok"
-  | "youtube"
-  | "twitter"
-  | "facebook"
-  | "twitch"
-  | "snapchat";
+export type { Platform } from "../lib/socials";
 
 export type SocialLink = { platform: Platform; url: string };
-
-interface PlatformDef {
-  key: Platform;
-  label: string;
-  color: string;
-  hint: string;
-  // Regex the pasted URL must match. Applied AFTER auto-prefixing https:// if missing.
-  pattern: RegExp;
-  // When true, the icon asset is a complete circular logo (bg + glyph baked in)
-  // and should fill its container instead of being placed on a brand-colored disc.
-  prerendered?: boolean;
-}
-
-const PLATFORMS: PlatformDef[] = [
-  {
-    key: "instagram", label: "Instagram", color: "#E4405F", hint: "instagram.com/tonpseudo",
-    pattern: /^https?:\/\/(www\.)?instagram\.com\/[A-Za-z0-9._-]+\/?/i,
-  },
-  {
-    key: "tiktok", label: "TikTok", color: "#000000", hint: "tiktok.com/@tonpseudo", prerendered: true,
-    pattern: /^https?:\/\/(www\.|vm\.|m\.)?tiktok\.com\/(@?[A-Za-z0-9._-]+)\/?/i,
-  },
-  {
-    key: "youtube", label: "YouTube", color: "#FF0000", hint: "youtube.com/@tachaine",
-    pattern: /^https?:\/\/(www\.|m\.)?(youtube\.com\/(@[A-Za-z0-9._-]+|channel\/[A-Za-z0-9_-]+|c\/[A-Za-z0-9._-]+|user\/[A-Za-z0-9._-]+)|youtu\.be\/[A-Za-z0-9_-]+)\/?/i,
-  },
-  {
-    key: "twitter", label: "X", color: "#0f172a", hint: "x.com/tonpseudo",
-    pattern: /^https?:\/\/(www\.)?(twitter\.com|x\.com)\/[A-Za-z0-9_]{1,15}\/?/i,
-  },
-  {
-    key: "facebook", label: "Facebook", color: "#1877F2", hint: "facebook.com/tonpseudo",
-    pattern: /^https?:\/\/(www\.|m\.)?(facebook\.com|fb\.com|fb\.me)\/[A-Za-z0-9.\-_/]+\/?/i,
-  },
-  {
-    key: "twitch", label: "Twitch", color: "#9146FF", hint: "twitch.tv/tonpseudo",
-    pattern: /^https?:\/\/(www\.)?twitch\.tv\/[A-Za-z0-9_]+\/?/i,
-  },
-  {
-    key: "snapchat", label: "Snapchat", color: "#FFCC00", hint: "snapchat.com/add/tonpseudo",
-    pattern: /^https?:\/\/(www\.)?snapchat\.com\/(add|t|@)\/?[A-Za-z0-9._-]+\/?/i,
-  },
-];
-
-const DEFS: Record<Platform, PlatformDef> = Object.fromEntries(
-  PLATFORMS.map((p) => [p.key, p])
-) as Record<Platform, PlatformDef>;
 
 function Glyph({ platform, className }: { platform: Platform; className?: string }) {
   const common = {
@@ -117,16 +64,6 @@ function Glyph({ platform, className }: { platform: Platform; className?: string
   }
 }
 
-function shortLabel(url: string): string {
-  try {
-    const u = new URL(url.startsWith("http") ? url : `https://${url}`);
-    const path = u.pathname.replace(/^\/+|\/+$/g, "");
-    return path ? `@${path.split("/").pop()}` : u.hostname;
-  } catch {
-    return url;
-  }
-}
-
 interface Props {
   value: SocialLink[];
   onChange: (value: SocialLink[]) => void;
@@ -155,21 +92,17 @@ export default function SocialsPicker({ value, onChange }: Props) {
 
   function commit() {
     if (!active) return;
-    let url = draft.trim();
-    if (!url) {
+    if (!draft.trim()) {
       cancel();
       return;
     }
-    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
-
-    const def = DEFS[active];
-    if (!def.pattern.test(url)) {
-      setError(`Lien ${def.label} invalide. Exemple : https://${def.hint}`);
+    const result = validateSocialUrl(active, draft);
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
-
     const next = value.filter((v) => v.platform !== active);
-    next.push({ platform: active, url });
+    next.push({ platform: active, url: result.url });
     onChange(next);
     cancel();
   }

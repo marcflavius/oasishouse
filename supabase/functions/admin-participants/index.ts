@@ -4,14 +4,7 @@
 
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
 import { serviceClient } from "../_shared/supabase.ts";
-
-// Constant-time-ish string compare to blunt trivial timing attacks.
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
+import { safeEqual } from "../_shared/validation.ts";
 
 Deno.serve(async (req) => {
   const preflight = handleOptions(req);

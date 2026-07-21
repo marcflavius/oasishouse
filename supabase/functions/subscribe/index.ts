@@ -1,68 +1,12 @@
 // POST /functions/v1/subscribe
-// Body: { prenom, nom, email, telephone, ile, age, motivation, hp }
-// - Validates input, silently swallows honeypot submissions
+// Body: { prenom, nom, blaze?, email, telephone, age, motivation, socials, hp }
+// - Validates input (see _shared/validation.ts), silently swallows honeypot submissions
 // - Inserts (or refreshes token for) a participant row
 // - Sends a French verification email via Resend
 
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
 import { serviceClient } from "../_shared/supabase.ts";
-
-interface SocialInput {
-  platform?: string;
-  url?: string;
-}
-
-interface Body {
-  prenom?: string;
-  nom?: string;
-  blaze?: string;
-  email?: string;
-  telephone?: string;
-  age?: string | number;
-  motivation?: string;
-  socials?: SocialInput[];
-  hp?: string;
-}
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const ALLOWED_PLATFORMS = new Set([
-  "instagram",
-  "tiktok",
-  "youtube",
-  "twitter",
-  "facebook",
-  "twitch",
-  "snapchat",
-]);
-
-function sanitizeSocials(input: unknown): { platform: string; url: string }[] {
-  if (!Array.isArray(input)) return [];
-  const out: { platform: string; url: string }[] = [];
-  const seen = new Set<string>();
-  for (const raw of input.slice(0, 8)) {
-    const platform = String((raw as SocialInput)?.platform ?? "").toLowerCase();
-    let url = String((raw as SocialInput)?.url ?? "").trim();
-    if (!ALLOWED_PLATFORMS.has(platform) || !url || seen.has(platform)) continue;
-    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
-    try {
-      // Validate as URL; reject anything that doesn't parse.
-      new URL(url);
-    } catch {
-      continue;
-    }
-    if (url.length > 500) continue;
-    seen.add(platform);
-    out.push({ platform, url });
-  }
-  return out;
-}
-
-function randomToken(): string {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-}
+import { randomToken, validateSubscribeBody } from "../_shared/validation.ts";
 
 function verificationEmailHtml(prenom: string, url: string): string {
   return `
@@ -128,46 +72,18 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Méthode non autorisée." }, 405);
   }
 
-  let body: Body;
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
     return jsonResponse({ error: "Corps JSON invalide." }, 400);
   }
 
-  // Honeypot — pretend it worked, but do nothing.
-  if (body.hp && body.hp.trim() !== "") {
-    return jsonResponse({ ok: true });
-  }
+  const result = validateSubscribeBody(body as Record<string, unknown>);
+  if (!result.ok) return jsonResponse({ error: result.error }, 400);
+  if (result.honeypot) return jsonResponse({ ok: true });
 
-  const prenom = body.prenom?.trim() ?? "";
-  const nom = body.nom?.trim() ?? "";
-  const blaze = body.blaze?.trim().slice(0, 60) ?? "";
-  const email = body.email?.trim().toLowerCase() ?? "";
-  const telephone = body.telephone?.trim() ?? "";
-  const motivation = body.motivation?.trim() ?? "";
-  const socials = sanitizeSocials(body.socials);
-  const ageNum = typeof body.age === "number" ? body.age : parseInt(String(body.age ?? ""), 10);
-
-  if (!prenom || !nom) {
-    return jsonResponse({ error: "Prénom et nom obligatoires." }, 400);
-  }
-  if (!EMAIL_RE.test(email)) {
-    return jsonResponse({ error: "Email invalide." }, 400);
-  }
-  if (!telephone) {
-    return jsonResponse({ error: "Téléphone obligatoire." }, 400);
-  }
-  if (!Number.isFinite(ageNum) || ageNum < 18 || ageNum > 99) {
-    return jsonResponse({ error: "Tu dois avoir au moins 18 ans." }, 400);
-  }
-  if (motivation.length < 10) {
-    return jsonResponse({ error: "Motivation trop courte." }, 400);
-  }
-  if (socials.length === 0) {
-    return jsonResponse({ error: "Ajoute au moins un lien réseau social." }, 400);
-  }
-
+  const clean = result.data;
   const token = randomToken();
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
@@ -175,25 +91,16 @@ Deno.serve(async (req) => {
 
   // Upsert by email: if the person re-submits, refresh their token & data
   // instead of rejecting on the unique constraint.
-  const { error } = await supabase
-    .from("participants")
-    .upsert(
-      {
-        prenom,
-        nom,
-        blaze: blaze || null,
-        email,
-        telephone,
-        age: ageNum,
-        socials,
-        motivation,
-        verified: false,
-        verified_at: null,
-        verification_token: token,
-        token_expires_at: expires,
-      },
-      { onConflict: "email" }
-    );
+  const { error } = await supabase.from("participants").upsert(
+    {
+      ...clean,
+      verified: false,
+      verified_at: null,
+      verification_token: token,
+      token_expires_at: expires,
+    },
+    { onConflict: "email" }
+  );
 
   if (error) {
     console.error("insert error", error);
@@ -201,7 +108,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    await sendVerificationEmail(email, prenom, token);
+    await sendVerificationEmail(clean.email, clean.prenom, token);
   } catch (err) {
     console.error("email error", err);
     return jsonResponse(

@@ -4,6 +4,7 @@
 
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
 import { serviceClient } from "../_shared/supabase.ts";
+import { decideVerifyStatus } from "../_shared/validation.ts";
 
 Deno.serve(async (req) => {
   const preflight = handleOptions(req);
@@ -37,16 +38,9 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Erreur serveur." }, 500);
   }
 
-  if (!row) {
-    return jsonResponse({ status: "invalid" });
-  }
-
-  if (row.verified) {
-    return jsonResponse({ status: "already" });
-  }
-
-  if (row.token_expires_at && new Date(row.token_expires_at) < new Date()) {
-    return jsonResponse({ status: "invalid" });
+  const status = decideVerifyStatus(row);
+  if (status !== "success") {
+    return jsonResponse({ status });
   }
 
   const { error: updateError } = await supabase

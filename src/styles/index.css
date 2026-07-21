@@ -7,7 +7,8 @@
     font-family: "Poppins", system-ui, sans-serif;
   }
   body {
-    @apply bg-abyss text-slate-100 antialiased;
+    @apply text-slate-100 antialiased;
+    background-color: #050b17;
     background-image:
       radial-gradient(1200px 600px at 10% -10%, rgba(8, 145, 178, 0.18), transparent 60%),
       radial-gradient(900px 500px at 100% 10%, rgba(34, 211, 238, 0.10), transparent 60%),
