@@ -9,13 +9,16 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:edge": "deno test --allow-env --allow-net --no-check supabase/functions/"
+    "test:edge": "deno test --allow-env --allow-net --no-check supabase/functions/",
+    "deploy": "./scripts/deploy.sh",
+    "deploy:preview": "./scripts/deploy.sh --preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.2"
+    "react-router-dom": "^6.26.2",
+    "vercel": "^56.4.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.5.0",

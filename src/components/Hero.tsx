@@ -1,13 +1,36 @@
 import { useState } from "react";
 
+const LQIP =
+  "data:image/webp;base64,UklGRpIAAABXRUJQVlA4IIYAAABwBACdASoYABgAPxF6tFOsJySiqAqpgCIJaADLLBEYXfzsuvtBcI2zzCmRcAD+8MspsRjHKJy4BoRQ+MYP5FojlCcUvRputj+f2nhCYrNb/cgo0OKcPxVFgRWuKuRtKDCEYEAX4KHcnHoOym7cynusEq18Lt/DGRVLZfmSW0UiZa4FduMAAA==";
+
 export default function Hero() {
   const [loaded, setLoaded] = useState(false);
 
   return (
     <header className="relative isolate overflow-hidden bg-abyss text-white">
+      <div
+        aria-hidden="true"
+        className={`absolute inset-0 -z-10 bg-cover bg-center transition-opacity duration-500 ${
+          loaded ? "opacity-0" : "opacity-100"
+        }`}
+        style={{
+          backgroundImage: `url(${LQIP})`,
+          filter: "blur(24px)",
+          transform: "scale(1.08)",
+        }}
+      />
+
       <picture className="absolute inset-0 -z-10 block">
-        <source srcSet="/hero_oasishouse.avif" type="image/avif" />
-        <source srcSet="/hero_oasishouse.webp" type="image/webp" />
+        <source
+          type="image/avif"
+          srcSet="/hero_oasishouse-640.avif 640w, /hero_oasishouse-960.avif 960w, /hero_oasishouse-1280.avif 1280w"
+          sizes="100vw"
+        />
+        <source
+          type="image/webp"
+          srcSet="/hero_oasishouse-640.webp 640w, /hero_oasishouse-960.webp 960w, /hero_oasishouse-1280.webp 1280w"
+          sizes="100vw"
+        />
         <img
           src="/hero_oasishouse.jpg"
           alt=""
@@ -22,6 +45,7 @@ export default function Hero() {
           }`}
         />
       </picture>
+
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-abyss/50 via-midnight/40 to-abyss/70" />
       <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-ocean/30 via-transparent to-coral/10" />
 

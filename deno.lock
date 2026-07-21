@@ -53,6 +53,7 @@
         "npm:react@^18.3.1",
         "npm:tailwindcss@^3.4.13",
         "npm:typescript@^5.6.2",
+        "npm:vercel@^56.4.1",
         "npm:vite@^5.4.8",
         "npm:vitest@^2.1.2"
       ]
