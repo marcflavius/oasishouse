@@ -95,12 +95,14 @@ export default function Inscription() {
 
       <main className="mx-auto max-w-2xl px-6 pb-24" id="inscription">
         <h2 className="text-2xl font-bold text-white sm:text-3xl">
-          Formulaire d'inscription
+          {status.kind === "success"
+            ? "Candidature confirmée"
+            : "Formulaire d'inscription"}
         </h2>
         <p className="mt-2 text-slate-400">
-          Remplis ce formulaire pour candidater. Tu recevras un code de
-          confirmation par email à saisir dans une fenêtre pour finaliser ton
-          inscription.
+          {status.kind === "success"
+            ? "Ta candidature est enregistrée et vérifiée. À très bientôt pour la suite !"
+            : "Remplis ce formulaire pour candidater. Tu recevras un code de confirmation par email à saisir dans une fenêtre pour finaliser ton inscription."}
         </p>
 
         {status.kind === "success" ? (
