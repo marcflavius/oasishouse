@@ -113,6 +113,83 @@ export default function Inscription() {
         </div>
       </section>
 
+      <section
+        id="recompenses"
+        className="mx-auto max-w-3xl scroll-mt-20 px-6 pb-16"
+      >
+        <h2 className="text-2xl font-bold text-white sm:text-3xl">
+          <span className="bg-gradient-to-r from-coral to-sunset bg-clip-text text-transparent">
+            Récompenses
+          </span>{" "}
+          et opportunités
+        </h2>
+        <p className="mt-3 text-slate-300">
+          Participer à{" "}
+          <span className="font-semibold text-white">OASIS HOUSE CARIBBEAN</span>,
+          c'est vivre une expérience unique, développer sa visibilité et tenter
+          de remporter de nombreux avantages.
+        </p>
+
+        <article className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-coral to-sunset text-sm font-extrabold text-white shadow">
+              1
+            </span>
+            <h3 className="text-lg font-bold text-white sm:text-xl">
+              Grand Prix du gagnant
+            </h3>
+          </div>
+          <p className="mt-3 text-slate-300">
+            Les vainqueurs de la saison remporteront&nbsp;:
+          </p>
+          <ul className="mt-4 space-y-3">
+            <li className="flex items-start gap-3">
+              <span
+                aria-hidden="true"
+                className="mt-2 h-2 w-2 shrink-0 rounded-full bg-coral"
+              />
+              <span className="text-slate-200">
+                Un <span className="font-semibold text-white">iPhone 17 Pro Max</span>.
+              </span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span
+                aria-hidden="true"
+                className="mt-2 h-2 w-2 shrink-0 rounded-full bg-lagoon"
+              />
+              <span className="text-slate-200">
+                Un{" "}
+                <span className="font-semibold text-white">
+                  billet d'avion aller-retour
+                </span>{" "}
+                vers une destination de son choix dans la{" "}
+                <span className="font-semibold text-sunset">Caraïbe</span>.
+              </span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span
+                aria-hidden="true"
+                className="mt-2 h-2 w-2 shrink-0 rounded-full bg-sunset"
+              />
+              <span className="text-slate-200">
+                Un{" "}
+                <span className="font-semibold text-white">
+                  trophée officiel OASIS HOUSE CARIBBEAN
+                </span>
+                .
+              </span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span
+                aria-hidden="true"
+                className="mt-2 h-2 w-2 shrink-0 animate-pulse rounded-full bg-white/40"
+              />
+              <span className="italic text-slate-400">et plus…</span>
+            </li>
+          </ul>
+        </article>
+      </section>
+
       <main className="mx-auto max-w-2xl scroll-mt-20 px-6 pb-24" id="inscription">
         <h2 className="text-2xl font-bold text-white sm:text-3xl">
           {status.kind === "success"
