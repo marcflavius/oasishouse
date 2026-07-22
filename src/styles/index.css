@@ -5,6 +5,7 @@
 @layer base {
   html {
     font-family: "Poppins", system-ui, sans-serif;
+    scroll-behavior: smooth;
   }
   body {
     @apply text-slate-100 antialiased;

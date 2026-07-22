@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import Hero from "../components/Hero";
+import Navbar from "../components/Navbar";
 import OtpModal from "../components/OtpModal";
 import SocialsPicker from "../components/SocialsPicker";
 import { subscribe, type SubscribeInput } from "../lib/api";
@@ -59,27 +60,46 @@ export default function Inscription() {
 
   return (
     <>
+      <span id="top" />
+      <Navbar />
       <Hero />
 
-      <section className="mx-auto max-w-3xl px-6 py-16">
+      <section id="concept" className="mx-auto max-w-3xl scroll-mt-20 px-6 py-16">
         <h2 className="text-2xl font-bold text-white sm:text-3xl">
           À propos de l'émission
         </h2>
         <div className="mt-4 space-y-4 text-slate-300">
           <p>
-            <strong>OASIS HOUSE</strong>{" "}
-            <em>(Là où naissent les talents)</em> est une émission de
-            télé-réalité qui réunit dans une villa des créateurs de contenus,
-            entrepreneurs, artistes et jeunes talents afin de valoriser leur
-            potentiel, leur créativité et leur capacité à avoir un impact
-            positif sur la société.
+            <span className="bg-gradient-to-r from-coral to-sunset bg-clip-text font-bold text-transparent">
+              OASIS HOUSE CARIBBEAN
+            </span>{" "}
+            est une émission de{" "}
+            <span className="font-semibold text-white">télé-réalité</span> et de{" "}
+            <span className="font-semibold text-white">création de contenu</span>{" "}
+            qui réunit pendant{" "}
+            <span className="font-semibold text-coral">3 jours</span> (
+            <span className="font-semibold text-coral">
+              du 21 au 23 août 2026
+            </span>
+            ) des <span className="font-semibold text-lagoon">influenceurs</span>,{" "}
+            <span className="font-semibold text-lagoon">créateurs de contenu</span>,{" "}
+            <span className="font-semibold text-lagoon">artistes</span>,{" "}
+            <span className="font-semibold text-lagoon">entrepreneurs</span> et
+            personnalités des réseaux sociaux issus de la{" "}
+            <span className="font-semibold text-sunset">Guyane</span>, de la{" "}
+            <span className="font-semibold text-sunset">Caraïbe</span> et de la{" "}
+            <span className="font-semibold text-sunset">diaspora</span>.
           </p>
           <p>
-            À travers des défis, des projets collaboratifs, des actions
-            solidaires et la création de contenus digitaux, les participants
-            développent leurs compétences tout en mettant en lumière les
-            richesses humaines, culturelles et associatives de la{" "}
-            <strong>Guyane</strong>.
+            L'objectif est de produire une émission{" "}
+            <span className="font-semibold text-white">divertissante</span>,{" "}
+            <span className="font-semibold text-white">moderne</span> et{" "}
+            <span className="font-semibold text-white">utile</span>, tout en
+            mettant en avant les{" "}
+            <span className="font-semibold text-coral">
+              talents de notre territoire
+            </span>
+            .
           </p>
         </div>
 
@@ -93,7 +113,7 @@ export default function Inscription() {
         </div>
       </section>
 
-      <main className="mx-auto max-w-2xl px-6 pb-24" id="inscription">
+      <main className="mx-auto max-w-2xl scroll-mt-20 px-6 pb-24" id="inscription">
         <h2 className="text-2xl font-bold text-white sm:text-3xl">
           {status.kind === "success"
             ? "Candidature confirmée"
