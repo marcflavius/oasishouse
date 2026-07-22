@@ -59,6 +59,27 @@ export default function Hero() {
             Caribbean
           </span>
         </h1>
+        <picture>
+          <source
+            type="image/avif"
+            srcSet="/show-320.avif 320w, /show-480.avif 480w, /show-640.avif 640w"
+            sizes="(min-width: 640px) 160px, 110px"
+          />
+          <source
+            type="image/webp"
+            srcSet="/show-320.webp 320w, /show-480.webp 480w, /show-640.webp 640w"
+            sizes="(min-width: 640px) 160px, 110px"
+          />
+          <img
+            src="/show-320.webp"
+            alt="SHOW"
+            width={480}
+            height={320}
+            loading="lazy"
+            decoding="async"
+            className="mx-auto mt-4 w-[110px] mix-blend-screen drop-shadow-[0_0_16px_rgba(251,191,36,0.3)] sm:w-[160px]"
+          />
+        </picture>
         <p className="mt-3 text-lg italic text-slate-200/90">
           Là où naissent les talents.
         </p>
